@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Register Device - Child Phone Tracker</title>
+</head>
+<body>
+  <h1>Device Registration (Consent Required)</h1>
+  <p>This page lets a device owner register their device to a parent account. You must grant permissions on the device manually — this system does not take permissions automatically.</p>
+
+  <form id="regForm">
+    <label>Registration token: <input id="token" /></label><br/>
+    <label>Device ID (optional): <input id="deviceId" /></label><br/>
+    <label>Permissions (comma-separated): <input id="permissions" placeholder="location,contacts,call_logs" /></label><br/>
+    <button type="submit">Register Device (consent)</button>
+  </form>
+
+  <div id="result" style="margin-top:20px; white-space:pre-wrap;"></div>
+
+  <script>
+    // If token present in query, prefill
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('token')) document.getElementById('token').value = params.get('token');
+
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = document.getElementById('token').value.trim();
+      const deviceId = document.getElementById('deviceId').value.trim();
+      const permissions = document.getElementById('permissions').value.split(',').map(s=>s.trim()).filter(Boolean);
+      if (!token) return alert('Token is required');
+      const res = await fetch(`/api/accounts/${encodeURIComponent(token)}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId, permissions })
+      });
+      const json = await res.json();
+      if (res.ok) {
+        document.getElementById('result').textContent = 'Registered successfully.\n' + JSON.stringify(json.account, null, 2);
+      } else {
+        document.getElementById('result').textContent = 'Error: ' + (json.error || JSON.stringify(json));
+      }
+    });
+  </script>
+</body>
+</html>
